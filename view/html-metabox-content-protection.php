@@ -1,0 +1,203 @@
+<?php
+/**
+ * Content Protection metabox content
+ *
+ * Displays content protection options in post edit metabox.
+ *
+ * @since 1.0.0
+ */
+
+declare(strict_types=1);
+
+namespace PTC_Trident;
+
+defined( 'ABSPATH' ) || die();
+
+global $ptc_trident;
+require_once $ptc_trident->plugin_path . 'src/class-purchase-protection.php';
+require_once $ptc_trident->plugin_path . 'src/class-protected-post.php';
+
+/* Use passed post if AJAX refresh, else use global $post */
+// if (
+//   isset( $post_id )
+//   && isset( $the_post )
+//   && isset( $res )
+//   && isset( $nonce )
+// ) {
+
+//   $res['status'] = 'success';
+
+//   if (
+//     NULL === $the_post
+//     || FALSE === wp_verify_nonce( $nonce, 'ptc_page_relatives' )
+//   ) {
+//     $res['status'] = 'fail';
+//     return;
+//   }
+
+// } else {
+
+//   global $post;
+//   $the_post = $post;
+
+// }
+
+global $post;
+$the_post = $post;
+
+/* Metabox Content */
+if ( isset( $the_post ) ) {
+
+  $protected_post = new Protected_Post( $the_post );
+  echo '<input type="hidden" name="ptc_trident_content_protection_nonce" value="' . esc_attr( wp_create_nonce( 'ptc_trident_content_protection' ) ) . '">';
+
+  $usable_redirect_url = $protected_post->get_usable_redirect_url();
+  $default_redirect_url = home_url();
+
+  $has_protective_ancestor = FALSE;
+  $is_inheriting = FALSE;
+  $disable_conditions_html = '';
+  $protector_required_product_ids = [];
+
+  $protective_ancestor = $protected_post->get_protector();
+  if ( $protective_ancestor !== FALSE && is_a( $protective_ancestor, '\\' . Protected_Post::class ) ) {
+
+    $has_protective_ancestor = TRUE;
+    $default_redirect_url = $protective_ancestor->get_usable_redirect_url();
+    $protector_required_product_ids = $protective_ancestor->required_product_ids;
+
+    if ( $protected_post->is_inheriting_conditions() ) {
+      /* is inheriting protective ancestor rules */
+      $is_inheriting = TRUE;
+      $disable_conditions_html = 'disabled="disabled"';
+      $inheritance_overrides_button_label = 'Apply Overrides';
+      $inheritance_note_head = 'Inheriting protection from:';
+      $inheritance_input_value = 'inherit';
+    } else {
+      /* is overriding protective ancestor rules */
+      $inheritance_overrides_button_label = 'Clear Overrides';
+      $inheritance_note_head = 'Overriding protection from:';
+      $inheritance_input_value = 'override';
+    }
+
+    $inheritance_ancestor_link = get_edit_post_link( $protective_ancestor->post );
+    ?>
+
+    <header class="ptc-trident-protection-inheritance">
+
+      <div>
+        <p>
+          <?php echo esc_html( $inheritance_note_head ); ?>
+          <a href="<?php echo esc_url( $inheritance_ancestor_link ); ?>"><?php echo esc_html( $protective_ancestor->post->post_title ); ?></a>
+        </p>
+      </div>
+
+      <div>
+        <button type="button"><?php echo esc_html( $inheritance_overrides_button_label ); ?></button>
+        <input type="hidden" name="ptc_trident_conditions_inheritance" value="<?php echo esc_attr( $inheritance_input_value ); ?>">
+      </div>
+
+    </header>
+
+    <?php
+  }//end if protective ancestor
+
+  if ( Purchase_Protection::is_woocommerce_loaded() ) {
+
+    $all_products = Purchase_Protection::get_all_products();
+
+    if ( is_array( $all_products ) && count( $all_products ) > 0 ) {
+
+      $ancestor_user_state = ( $has_protective_ancestor ) ? $protective_ancestor->required_user_state : '';
+      ?>
+
+      <fieldset class="ptc-trident-conditions-products" <?php echo $disable_conditions_html; //phpcs:ignore ?> data-ancestor-setting="<?php echo esc_attr( json_encode( $protector_required_product_ids ) ); ?>">
+
+        <legend>Product Ownership</legend>
+
+        <p>
+          Visitor must own
+          <select id="ptc-trident-conditions-method" name="ptc_trident_product_conditions_method">
+            <option value="any" <?php echo ( $protected_post->product_protect_method === 'any' ) ? 'selected="selected"' : '' ?>>ANY</option>
+            <option value="all" <?php echo ( $protected_post->product_protect_method === 'all' ) ? 'selected="selected"' : '' ?>>ALL</option>
+          </select>
+          of the selected products to access this post:
+        </p>
+
+        <?php
+        foreach ( $all_products as $product ) {
+          $product_id = $product->ID;
+          $product_title = $product->post_title;
+          $checked_html = ( in_array( $product_id, $protected_post->required_product_ids ) ) ? 'checked="checked"' : '';
+          ?>
+          <div class="ptc-trident-conditions-product-row">
+            <input id="ptc-trident-conditions-product-<?php echo esc_attr( $product_id ); ?>" type="checkbox" name="ptc_trident_conditions_products[]" value="<?php echo esc_attr( $product_id ); ?>" <?php echo $checked_html; //phpcs:ignore ?>>
+            <label for="ptc-trident-conditions-product-<?php echo esc_attr( $product_id ); ?>"><?php echo esc_html( $product_title ); ?></label>
+          </div>
+        <?php }//end foreach product ?>
+
+      </fieldset>
+
+      <?php
+    } else {
+      echo '<p class="ptc-trident-warning"><i class="fas fa-exclamation-triangle"></i>No WooCommerce products were found.</p>';
+    }
+
+  } else {
+    echo '<p class="ptc-trident-error"><i class="fas fa-lock"></i>WooCommerce was not detected. Protection by product ownership is currently unavailable.</p>';
+  }//end if woocommerce is loaded
+
+  $user_state_suffixes = [ 'in', 'out', 'editor', 'any' ];
+  $user_state_values = [ 'logged_in', 'logged_out', 'user_editor', 'user_any' ];
+  $user_state_labels = [ 'Logged in', 'Logged out', 'Editors only', 'Any user' ];
+
+  $ancestor_user_state = ( $has_protective_ancestor ) ? $protective_ancestor->required_user_state : '';
+  ?>
+
+  <fieldset class="ptc-trident-conditions-user-states" <?php echo $disable_conditions_html;//phpcs:ignore ?> data-ancestor-setting="<?php echo esc_attr( $ancestor_user_state ); ?>">
+
+    <legend>User States</legend>
+
+    <?php
+    foreach ( $user_state_values as $i => $user_state_value ) {
+      $checked_html = ( $protected_post->required_user_state === $user_state_value ) ? 'checked="checked"' : '';
+      ?>
+      <div class="ptc-trident-conditions-user-state-row">
+        <input id="ptc-trident-conditions-user-state-<?php echo esc_attr( $user_state_suffixes[ $i ] ); ?>" type="radio" name="ptc_trident_conditions_user_state" value="<?php echo esc_attr( $user_state_value ); ?>" <?php echo $checked_html;//phpcs:ignore ?>>
+        <label for="ptc-trident-conditions-user-state-<?php echo esc_attr( $user_state_suffixes[ $i ] ); ?>"><?php echo esc_html( $user_state_labels[ $i ] ); ?></label>
+      </div>
+    <?php }//end foreach user state ?>
+
+  </fieldset>
+
+  <fieldset class="ptc-trident-conditions-options">
+
+    <legend>Options</legend>
+
+    <?php if ( is_post_type_hierarchical( $the_post->post_type ) && ! $is_inheriting ) { ?>
+    <div class="ptc-trident-conditions-options-row">
+      <input id="ptc-trident-conditions-options-descend" type="checkbox" name="ptc_trident_conditions_options_descend" value="yes" <?php echo ( $protected_post->protect_children ) ? 'checked="checked"' : '' ?>>
+      <label for="ptc-trident-conditions-options-descend">Apply protection to children?</label>
+    </div>
+    <?php }//endif show descend option ?>
+
+    <div class="ptc-trident-conditions-options-row">
+      <label for="ptc-trident-conditions-options-redirect">Redirect URL</label>
+      <input id="ptc-trident-conditions-options-redirect" name="ptc_trident_conditions_options_redirect" type="url" placeholder="<?php echo esc_url( $default_redirect_url ); ?>" value="<?php echo esc_attr( $protected_post->inherited_redirect_url ? '' : $protected_post->redirect_url ); ?>">
+      <p>Currently<?php echo $protected_post->inherited_redirect_url ? ' <span>(inherited)</span>' : '';//phpcs:ignore ?>: <a href="<?php echo esc_url( $usable_redirect_url ); ?>"><?php echo esc_html( $usable_redirect_url ); ?></a></p>
+    </div>
+
+  </fieldset>
+
+  <?php
+} else {
+  /* ERROR STATE HANDLING */
+  $request_uri = isset( $_SERVER['REQUEST_URI'] ) ?
+                 filter_var( wp_unslash( $_SERVER['REQUEST_URI'] ), FILTER_SANITIZE_URL ) :
+                 '[Not Set]';
+  $http_referer = isset( $_SERVER['HTTP_REFERER'] ) ?
+                  filter_var( wp_unslash( $_SERVER['HTTP_REFERER'] ), FILTER_SANITIZE_URL ) :
+                  '[Not Set]';
+  error_log( "Failed to identify post for content protection settings pane.\nURI: $request_uri\nREFERER: $http_referer" );
+  return;
+}
