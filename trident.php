@@ -7,7 +7,7 @@
  * @license           GPL-3.0-or-later
  *
  * Plugin Name:       Trident – Simple Content Protection
- * Description:       Simple, powerful content protection for your site with WooCommerce support.
+ * Description:       Simple, powerful content protection for your site with WooCommerce integration.
  * Version:           1.0.0
  * Requires at least: 5.1.0
  * Requires PHP:      7.0
@@ -81,9 +81,11 @@ if ( ! class_exists( '\PTC_Trident' ) ) {
      */
     function register() {
       add_action( 'add_meta_boxes', [ $this, 'add_meta_boxes' ] );
-      // add_action( 'wp_ajax_refresh_page_relatives', [ $this, 'related_content_metabox_html_ajax_refresh' ] );
       add_action( 'save_post', [ $this, 'save_post_meta' ] );
+      add_action( 'wp_ajax_ptc_trident_refresh_content_protection', [ $this, 'content_protection_metabox_html_ajax_refresh' ] );
       add_action( 'template_redirect', [ $this, 'template_redirect' ] );
+      add_action( 'admin_enqueue_scripts', [ $this, 'register_scripts' ] );
+
     }
 
     /**
@@ -132,8 +134,8 @@ if ( ! class_exists( '\PTC_Trident' ) ) {
      *
      * @ignore
      */
-    function related_content_metabox_html_ajax_refresh() {
-      // require_once $this->plugin_path . 'src/ajax-refresh-metabox-page-relatives.php';
+    function content_protection_metabox_html_ajax_refresh() {
+      require_once $this->plugin_path . 'src/ajax-refresh-metabox-content-protection.php';
     }
 
     function template_redirect() {
@@ -160,36 +162,29 @@ if ( ! class_exists( '\PTC_Trident' ) ) {
         '5.12.1'
       );
 
-      // switch ( $hook_suffix ) {
-      //   case 'index.php':
-      //     wp_enqueue_script(
-      //       'ptc-completionist_dashboard-widget-js',
-      //       plugins_url( 'assets/js/dashboard-widget.js', __FILE__ ),
-      //       [ 'jquery', 'fontawesome-5' ],
-      //       '0.0.0'
-      //     );
-      //     wp_localize_script(
-      //       'ptc-completionist_dashboard-widget-js',
-      //       'ptc_completionist_dashboard_widget',
-      //       [
-      //         'nonce_pin' => wp_create_nonce( 'ptc_completionist_pin_task' ),
-      //         'nonce_list' => wp_create_nonce( 'ptc_completionist_list_task' ),
-      //         'nonce_create' => wp_create_nonce( 'ptc_completionist_create_task' ),
-      //         'nonce_delete' => wp_create_nonce( 'ptc_completionist_delete_task' ),
-      //         'nonce_update' => wp_create_nonce( 'ptc_completionist_update_task' ),
-      //         'page_size' => 10,
-      //         'current_category' => 'all-site-tasks',
-      //         'current_page' => 1,
-      //       ]
-      //     );
-      //     wp_enqueue_style(
-      //       'ptc-completionist_dashboard-widget-css',
-      //       plugins_url( 'assets/css/dashboard-widget.css', __FILE__ ),
-      //       [],
-      //       '0.0.0'
-      //     );
-      //     break;
-      // }
+      switch ( $hook_suffix ) {
+        case 'post.php':
+          wp_enqueue_script(
+            'ptc-trident_metabox-content-protection-js',
+            plugins_url( 'assets/js/metabox-content-protection.js', __FILE__ ),
+            [ 'jquery', 'fontawesome-5' ],
+            '0.0.0'
+          );
+          wp_localize_script(
+            'ptc-trident_metabox-content-protection-js',
+            'ptc_trident_content_protection',
+            [
+              'nonce' => wp_create_nonce( 'ptc_trident_content_protection' ),
+            ]
+          );
+          // wp_enqueue_style(
+          //   'ptc-completionist_dashboard-widget-css',
+          //   plugins_url( 'assets/css/dashboard-widget.css', __FILE__ ),
+          //   [],
+          //   '0.0.0'
+          // );
+          break;
+      }
 
     }//end register_scripts()
 

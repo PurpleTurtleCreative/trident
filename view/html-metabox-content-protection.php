@@ -17,36 +17,31 @@ global $ptc_trident;
 require_once $ptc_trident->plugin_path . 'src/class-purchase-protection.php';
 require_once $ptc_trident->plugin_path . 'src/class-protected-post.php';
 
-/* Use passed post if AJAX refresh, else use global $post */
-// if (
-//   isset( $post_id )
-//   && isset( $the_post )
-//   && isset( $res )
-//   && isset( $nonce )
-// ) {
+/* Use passed post if AJAX Gutenberg refresh, else use global $post */
+if (
+  isset( $the_post_id )
+  && isset( $the_post )
+  && isset( $res )
+) {
 
-//   $res['status'] = 'success';
+  if (
+    NULL === $the_post
+  ) {
+    $res['status'] = 'fail';
+    return;
+  }
 
-//   if (
-//     NULL === $the_post
-//     || FALSE === wp_verify_nonce( $nonce, 'ptc_page_relatives' )
-//   ) {
-//     $res['status'] = 'fail';
-//     return;
-//   }
+  $res['status'] = 'success';
 
-// } else {
+} else {
 
-//   global $post;
-//   $the_post = $post;
+  global $post;
+  $the_post = $post;
 
-// }
-
-global $post;
-$the_post = $post;
+}
 
 /* Metabox Content */
-if ( isset( $the_post ) ) {
+if ( isset( $the_post ) && is_a( $the_post, '\WP_Post' ) ) {
 
   $protected_post = new Protected_Post( $the_post );
   echo '<input type="hidden" name="ptc_trident_content_protection_nonce" value="' . esc_attr( wp_create_nonce( 'ptc_trident_content_protection' ) ) . '">';
@@ -54,22 +49,20 @@ if ( isset( $the_post ) ) {
   $usable_redirect_url = $protected_post->get_usable_redirect_url();
   $default_redirect_url = home_url();
 
+  $is_inheriting = $protected_post->is_inheriting_conditions();
   $has_protective_ancestor = FALSE;
-  $is_inheriting = FALSE;
+
   $disable_conditions_html = '';
-  $protector_required_product_ids = [];
 
   $protective_ancestor = $protected_post->get_protector();
   if ( $protective_ancestor !== FALSE && is_a( $protective_ancestor, '\\' . Protected_Post::class ) ) {
 
     $has_protective_ancestor = TRUE;
     $default_redirect_url = $protective_ancestor->get_usable_redirect_url();
-    $protector_required_product_ids = $protective_ancestor->required_product_ids;
 
-    if ( $protected_post->is_inheriting_conditions() ) {
-      /* is inheriting protective ancestor rules */
-      $is_inheriting = TRUE;
+    if ( $is_inheriting ) {
       $disable_conditions_html = 'disabled="disabled"';
+      /* is inheriting protective ancestor rules */
       $inheritance_overrides_button_label = 'Apply Overrides';
       $inheritance_note_head = 'Inheriting protection from:';
       $inheritance_input_value = 'inherit';
@@ -79,8 +72,6 @@ if ( isset( $the_post ) ) {
       $inheritance_note_head = 'Overriding protection from:';
       $inheritance_input_value = 'override';
     }
-
-    $inheritance_ancestor_link = get_edit_post_link( $protective_ancestor->post );
     ?>
 
     <header class="ptc-trident-protection-inheritance">
@@ -88,12 +79,12 @@ if ( isset( $the_post ) ) {
       <div>
         <p>
           <?php echo esc_html( $inheritance_note_head ); ?>
-          <a href="<?php echo esc_url( $inheritance_ancestor_link ); ?>"><?php echo esc_html( $protective_ancestor->post->post_title ); ?></a>
+          <a href="<?php echo esc_url( get_edit_post_link( $protective_ancestor->post ) ); ?>"><?php echo esc_html( $protective_ancestor->post->post_title ); ?></a>
         </p>
       </div>
 
       <div>
-        <button type="button"><?php echo esc_html( $inheritance_overrides_button_label ); ?></button>
+        <button class="ptc-trident-inheritance-toggle" type="button"><?php echo esc_html( $inheritance_overrides_button_label ); ?></button>
         <input type="hidden" name="ptc_trident_conditions_inheritance" value="<?php echo esc_attr( $inheritance_input_value ); ?>">
       </div>
 
@@ -108,18 +99,19 @@ if ( isset( $the_post ) ) {
 
     if ( is_array( $all_products ) && count( $all_products ) > 0 ) {
 
-      $ancestor_user_state = ( $has_protective_ancestor ) ? $protective_ancestor->required_user_state : '';
+      $ancestor_conditions_method = ( $has_protective_ancestor && $protective_ancestor->product_protect_method === 'all' ) ? 'all' : 'any';
+      $ancestor_product_setting = ( $has_protective_ancestor && is_array( $protective_ancestor->required_product_ids ) ) ? $protective_ancestor->required_product_ids : [];
       ?>
 
-      <fieldset class="ptc-trident-conditions-products" <?php echo $disable_conditions_html; //phpcs:ignore ?> data-ancestor-setting="<?php echo esc_attr( json_encode( $protector_required_product_ids ) ); ?>">
+      <fieldset class="ptc-trident-conditions-products" <?php echo $disable_conditions_html;//phpcs:ignore ?> data-ancestor-value="<?php echo esc_attr( json_encode( $ancestor_product_setting ) ); ?>">
 
         <legend>Product Ownership</legend>
 
         <p>
           Visitor must own
-          <select id="ptc-trident-conditions-method" name="ptc_trident_product_conditions_method">
-            <option value="any" <?php echo ( $protected_post->product_protect_method === 'any' ) ? 'selected="selected"' : '' ?>>ANY</option>
-            <option value="all" <?php echo ( $protected_post->product_protect_method === 'all' ) ? 'selected="selected"' : '' ?>>ALL</option>
+          <select id="ptc-trident-conditions-method" name="ptc_trident_product_conditions_method" data-ancestor-value="<?php echo esc_attr( $ancestor_conditions_method ); ?>">
+            <option value="any" <?php echo ( $protected_post->product_protect_method === 'any' ) ? 'selected="selected"' : '';//phpcs:ignore ?>>ANY</option>
+            <option value="all" <?php echo ( $protected_post->product_protect_method === 'all' ) ? 'selected="selected"' : '';//phpcs:ignore ?>>ALL</option>
           </select>
           of the selected products to access this post:
         </p>
@@ -131,7 +123,7 @@ if ( isset( $the_post ) ) {
           $checked_html = ( in_array( $product_id, $protected_post->required_product_ids ) ) ? 'checked="checked"' : '';
           ?>
           <div class="ptc-trident-conditions-product-row">
-            <input id="ptc-trident-conditions-product-<?php echo esc_attr( $product_id ); ?>" type="checkbox" name="ptc_trident_conditions_products[]" value="<?php echo esc_attr( $product_id ); ?>" <?php echo $checked_html; //phpcs:ignore ?>>
+            <input id="ptc-trident-conditions-product-<?php echo esc_attr( $product_id ); ?>" type="checkbox" name="ptc_trident_conditions_products[]" value="<?php echo esc_attr( $product_id ); ?>"  <?php echo $checked_html;//phpcs:ignore ?>>
             <label for="ptc-trident-conditions-product-<?php echo esc_attr( $product_id ); ?>"><?php echo esc_html( $product_title ); ?></label>
           </div>
         <?php }//end foreach product ?>
@@ -151,10 +143,10 @@ if ( isset( $the_post ) ) {
   $user_state_values = [ 'logged_in', 'logged_out', 'user_editor', 'user_any' ];
   $user_state_labels = [ 'Logged in', 'Logged out', 'Editors only', 'Any user' ];
 
-  $ancestor_user_state = ( $has_protective_ancestor ) ? $protective_ancestor->required_user_state : '';
+  $ancestor_user_state = ( $has_protective_ancestor ) ? $protective_ancestor->required_user_state : 'user_any';
   ?>
 
-  <fieldset class="ptc-trident-conditions-user-states" <?php echo $disable_conditions_html;//phpcs:ignore ?> data-ancestor-setting="<?php echo esc_attr( $ancestor_user_state ); ?>">
+  <fieldset class="ptc-trident-conditions-user-states" <?php echo $disable_conditions_html;//phpcs:ignore ?> data-ancestor-value="<?php echo esc_attr( $ancestor_user_state ); ?>">
 
     <legend>User States</legend>
 
@@ -174,14 +166,12 @@ if ( isset( $the_post ) ) {
 
     <legend>Options</legend>
 
-    <?php if ( is_post_type_hierarchical( $the_post->post_type ) && ! $is_inheriting ) { ?>
-    <div class="ptc-trident-conditions-options-row">
-      <input id="ptc-trident-conditions-options-descend" type="checkbox" name="ptc_trident_conditions_options_descend" value="yes" <?php echo ( $protected_post->protect_children ) ? 'checked="checked"' : '' ?>>
+    <div class="ptc-trident-conditions-options-row-descend" <?php echo ( is_post_type_hierarchical( $the_post->post_type ) && ! $is_inheriting ) ? '' : 'style="display:none;"'; ?>>
+      <input id="ptc-trident-conditions-options-descend" type="checkbox" name="ptc_trident_conditions_options_descend" value="yes" <?php echo ( $protected_post->protect_children ) ? 'checked="checked"' : ''; ?>>
       <label for="ptc-trident-conditions-options-descend">Apply protection to children?</label>
     </div>
-    <?php }//endif show descend option ?>
 
-    <div class="ptc-trident-conditions-options-row">
+    <div class="ptc-trident-conditions-options-row-redirect">
       <label for="ptc-trident-conditions-options-redirect">Redirect URL</label>
       <input id="ptc-trident-conditions-options-redirect" name="ptc_trident_conditions_options_redirect" type="url" placeholder="<?php echo esc_url( $default_redirect_url ); ?>" value="<?php echo esc_attr( $protected_post->inherited_redirect_url ? '' : $protected_post->redirect_url ); ?>">
       <p>Currently<?php echo $protected_post->inherited_redirect_url ? ' <span>(inherited)</span>' : '';//phpcs:ignore ?>: <a href="<?php echo esc_url( $usable_redirect_url ); ?>"><?php echo esc_html( $usable_redirect_url ); ?></a></p>

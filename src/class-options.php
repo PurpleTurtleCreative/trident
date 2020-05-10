@@ -73,6 +73,17 @@ if ( ! class_exists( __NAMESPACE__ . '\Options' ) ) {
     const PROTECT_CHILDREN = '_ptc_trident_descend';
 
     /**
+     * Postmeta key for if a content's protection settings act as overrides to
+     * inherited content protection settings.
+     * Value may be "yes" or "no" (default), returned as a boolean.
+     *
+     * @since 1.0.0
+     *
+     * @var string OVERRIDE_INHERITANCE
+     */
+    const OVERRIDE_INHERITANCE = '_ptc_trident_override_inheritance';
+
+    /**
      * Gets a sanitized value for an option of this class returned in the key's
      * format as documented on this class's constants. Data self-healing will
      * occur if the sanitized value is unusable.
@@ -176,6 +187,7 @@ if ( ! class_exists( __NAMESPACE__ . '\Options' ) ) {
         /*-----*/
 
         case self::PROTECT_CHILDREN:
+        case self::OVERRIDE_INHERITANCE:
           if ( $object_id === 0 ) {
             return self::get_default( $key );
           }
@@ -225,6 +237,7 @@ if ( ! class_exists( __NAMESPACE__ . '\Options' ) ) {
           return 'any';
 
         case self::PROTECT_CHILDREN:
+        case self::OVERRIDE_INHERITANCE:
           return FALSE;
 
       }//end switch key
@@ -277,6 +290,7 @@ if ( ! class_exists( __NAMESPACE__ . '\Options' ) ) {
         case self::REDIRECT_URL:
         case self::PRODUCT_PROTECT_METHOD:
         case self::PROTECT_CHILDREN:
+        case self::OVERRIDE_INHERITANCE:
           $sanitized_value = self::sanitize( $key, $value );
           if ( ! $force && $value != $sanitized_value ) {
             throw new \Exception( 'ERROR: Refused to save different value for postmeta: ' . $key, 400 );
@@ -319,6 +333,7 @@ if ( ! class_exists( __NAMESPACE__ . '\Options' ) ) {
         case self::REDIRECT_URL:
         case self::PRODUCT_PROTECT_METHOD:
         case self::PROTECT_CHILDREN:
+        case self::OVERRIDE_INHERITANCE:
           if ( $object_id === -1 ) {
             return delete_metadata( 'post', 0, $key, '', TRUE );
           } else {
@@ -428,6 +443,7 @@ if ( ! class_exists( __NAMESPACE__ . '\Options' ) ) {
         case self::REQUIRED_USER_STATE:
         case self::PRODUCT_PROTECT_METHOD:
         case self::PROTECT_CHILDREN:
+        case self::OVERRIDE_INHERITANCE:
           $filtered_value = filter_var(
             $value,
             FILTER_SANITIZE_STRING,
@@ -623,6 +639,7 @@ if ( ! class_exists( __NAMESPACE__ . '\Options' ) ) {
         case self::REDIRECT_URL:
         case self::PRODUCT_PROTECT_METHOD:
         case self::PROTECT_CHILDREN:
+        case self::OVERRIDE_INHERITANCE:
           if ( $object_id === 0 ) {
             $object_id = get_the_ID();
             if ( $object_id === 0 || $object_id === FALSE || ! is_numeric( $object_id ) ) {

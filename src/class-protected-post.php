@@ -32,6 +32,8 @@ if ( ! class_exists( __NAMESPACE__ . '\Protected_Post' ) ) {
     public $redirect_url = '';
     public $inherited_redirect_url = FALSE;
 
+    public $override_inheritance = FALSE;
+
     public $protect_children = FALSE;
 
     public $inherited_parent = NULL;
@@ -177,11 +179,7 @@ if ( ! class_exists( __NAMESPACE__ . '\Protected_Post' ) ) {
      * @since 1.0.0
      *
      * @return bool|\PTC_Trident\Protected_Post The Protected Post object that
-     * is the nearest ancestor post with descending conditions enabled. Note
-     * that, despite its type, it is not required to be protected itsself. This
-     * allows for "liberation" inheritance in a multi-level hierarchy. For
-     * example, the first module of a course may be "liberated" from the
-     * descending protection given by the overriding Course root ancestor.
+     * is the nearest ancestor post with descending conditions enabled.
      * Returns FALSE if there is no ancestor from which to inherit.
      */
     function get_protector() {
@@ -331,6 +329,13 @@ if ( ! class_exists( __NAMESPACE__ . '\Protected_Post' ) ) {
         $this->protect_children = Options::get_default( Options::PROTECT_CHILDREN, $this->post->ID );
       }
 
+      $override_inheritance = Options::get( Options::OVERRIDE_INHERITANCE, $this->post->ID );
+      if ( is_bool( $override_inheritance ) ) {
+        $this->override_inheritance = $override_inheritance;
+      } else {
+        $this->override_inheritance = Options::get_default( Options::OVERRIDE_INHERITANCE, $this->post->ID );
+      }
+
     }
 
     /**
@@ -344,6 +349,10 @@ if ( ! class_exists( __NAMESPACE__ . '\Protected_Post' ) ) {
      * @uses \PTC_Trident\Protected_Post::inherit_protection_conditions_from()
      */
     private function maybe_load_inherited_conditions() {
+
+      if ( $this->override_inheritance === TRUE ) {
+        return;
+      }
 
       $this->inherited_parent = NULL;
       $ancestor = $this->get_protector();

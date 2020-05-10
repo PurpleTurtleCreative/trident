@@ -33,6 +33,8 @@ if (
     } catch ( \Exception $e ) {
       /* Refused to save invalid option value */
     }
+  } else {
+    Options::delete( Options::PROTECT_CHILDREN, $the_post_id );
   }
 
   if ( isset( $_POST['ptc_trident_conditions_options_redirect'] ) ) {
@@ -46,11 +48,23 @@ if (
   /* CHECK INHERITANCE SETTING BEFORE SAVING (OVERRIDE) CONDITIONS */
   if ( isset( $_POST['ptc_trident_conditions_inheritance'] ) ) {
     $inheritance_option = Options::sanitize( 'string', $_POST['ptc_trident_conditions_inheritance'] );//phpcs:ignore WordPress.Security.ValidatedSanitizedInput
-    if ( 'inherit' === $inheritance_option && $the_post_id ) {
+    if ( 'inherit' === $inheritance_option ) {
       Options::delete( Options::REQUIRED_PRODUCT_IDS, $the_post_id );
       Options::delete( Options::REQUIRED_USER_STATE, $the_post_id );
       Options::delete( Options::PRODUCT_PROTECT_METHOD, $the_post_id );
+      Options::delete( Options::PROTECT_CHILDREN, $the_post_id );
+      try {
+        Options::save( Options::OVERRIDE_INHERITANCE, 'no', FALSE, $the_post_id );
+      } catch ( \Exception $e ) {
+        /* Refused to save invalid option value */
+      }
       return;
+    } elseif ( 'override' === $inheritance_option ) {
+      try {
+        Options::save( Options::OVERRIDE_INHERITANCE, 'yes', FALSE, $the_post_id );
+      } catch ( \Exception $e ) {
+        /* Refused to save invalid option value */
+      }
     }
   }
 
@@ -66,6 +80,8 @@ if (
     isset( $_POST['ptc_trident_conditions_products'] )
     && is_array( $_POST['ptc_trident_conditions_products'] )
   ) {
+    /* clear all previously required product ids so only new settings remain */
+    Options::delete( Options::REQUIRED_PRODUCT_IDS, $the_post_id );
     foreach ( $_POST['ptc_trident_conditions_products'] as $product_id ) {
       try {
         Options::save( Options::REQUIRED_PRODUCT_IDS, $product_id, FALSE, $the_post_id );
