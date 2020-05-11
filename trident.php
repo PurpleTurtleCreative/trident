@@ -130,7 +130,7 @@ if ( ! class_exists( '\PTC_Trident' ) ) {
     /**
      * AJAX handler for refreshing the Page Relatives metabox in Gutenberg.
      *
-     * @since 1.2.0
+     * @since 1.0.0
      *
      * @ignore
      */
@@ -138,6 +138,13 @@ if ( ! class_exists( '\PTC_Trident' ) ) {
       require_once $this->plugin_path . 'src/ajax-refresh-metabox-content-protection.php';
     }
 
+    /**
+     * Redirect from post if visitor is prohibited.
+     *
+     * @since 1.0.0
+     *
+     * @ignore
+     */
     function template_redirect() {
       $the_post = get_post();
       if ( is_a( $the_post, '\WP_Post' ) ) {
@@ -177,12 +184,12 @@ if ( ! class_exists( '\PTC_Trident' ) ) {
               'nonce' => wp_create_nonce( 'ptc_trident_content_protection' ),
             ]
           );
-          // wp_enqueue_style(
-          //   'ptc-completionist_dashboard-widget-css',
-          //   plugins_url( 'assets/css/dashboard-widget.css', __FILE__ ),
-          //   [],
-          //   '0.0.0'
-          // );
+          wp_enqueue_style(
+            'ptc-trident_metabox-content-protection-css',
+            plugins_url( 'assets/css/metabox-content-protection.css', __FILE__ ),
+            [],
+            '0.0.0'
+          );
           break;
       }
 

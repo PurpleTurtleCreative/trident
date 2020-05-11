@@ -75,19 +75,14 @@ if ( isset( $the_post ) && is_a( $the_post, '\WP_Post' ) ) {
     ?>
 
     <header class="ptc-trident-protection-inheritance">
-
       <div>
         <p>
           <?php echo esc_html( $inheritance_note_head ); ?>
           <a href="<?php echo esc_url( get_edit_post_link( $protective_ancestor->post ) ); ?>"><?php echo esc_html( $protective_ancestor->post->post_title ); ?></a>
-        </p>
-      </div>
-
-      <div>
         <button class="ptc-trident-inheritance-toggle" type="button"><?php echo esc_html( $inheritance_overrides_button_label ); ?></button>
         <input type="hidden" name="ptc_trident_conditions_inheritance" value="<?php echo esc_attr( $inheritance_input_value ); ?>">
+        </p>
       </div>
-
     </header>
 
     <?php
@@ -113,7 +108,6 @@ if ( isset( $the_post ) && is_a( $the_post, '\WP_Post' ) ) {
             <option value="any" <?php echo ( $protected_post->product_protect_method === 'any' ) ? 'selected="selected"' : '';//phpcs:ignore ?>>ANY</option>
             <option value="all" <?php echo ( $protected_post->product_protect_method === 'all' ) ? 'selected="selected"' : '';//phpcs:ignore ?>>ALL</option>
           </select>
-          of the selected products to access this post:
         </p>
 
         <?php
