@@ -1,7 +1,8 @@
 ﻿=== Trident ===
 Contributors: michelleblanchette
-Tags: woocommerce, content protection, locked content, conditional content, page access, post access, limit access, dynamic content
+Tags: content protection, locked content, woocommerce, access, conditional content, page access, post access, limit access, dynamic content
 Tested up to: 5.4.1
+Requires at least: 4.7.1
 Stable tag: 1.0.0
 Requires PHP: 7.0
 License: GPLv3 or later
@@ -35,13 +36,13 @@ The following groups of content protection conditions may be set to specify acce
 
 **WooCommerce Product Ownership**
 - Condition method _ANY_ (logical OR) or _ALL_ (logical AND)
-- Published WooCommerce products to require ownership
+- WooCommerce products to require ownership
 
 == Installation ==
 
-Trident does not require any special configurations, so it is ready to use after standard plugin installation and activation.
+Trident does not require any special configurations, so it is ready to use after standard plugin installation and activation procedures.
 
 == Changelog ==
 
-= 1.0.0 – 2020-05-13 =
+= 1.0.0 – 2020-05-14 =
 * Initial Release

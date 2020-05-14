@@ -6,10 +6,10 @@
  * @copyright         2020 Michelle Blanchette
  * @license           GPL-3.0-or-later
  *
- * Plugin Name:       Trident – Simple Content Protection
+ * Plugin Name:       Trident
  * Description:       Simple, powerful content protection for your site with WooCommerce integration.
  * Version:           1.0.0
- * Requires at least: 5.1.0
+ * Requires at least: 4.7.1
  * Requires PHP:      7.0
  * Author:            Purple Turtle Creative
  * Author URI:        https://purpleturtlecreative.com/
