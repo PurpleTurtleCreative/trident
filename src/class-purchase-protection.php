@@ -52,7 +52,7 @@ if ( ! class_exists( __NAMESPACE__ . '\Purchase_Protection' ) ) {
       return get_posts( [
         'post_type' => 'product',
         'numberposts' => -1,
-        'post_status' => 'publish',
+        'post_status' => 'any',
         'orderby' => 'post_title',
       ] );
 
