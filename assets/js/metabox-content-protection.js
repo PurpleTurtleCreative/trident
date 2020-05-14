@@ -83,7 +83,7 @@ jQuery(function($) {
             wasSavingMetaBoxes = false;
 
             let currentHTML = metaboxContainer.html();
-            metaboxContainer.html('<p class="ptc-notice-refreshing-metabox"><i class="fas fa-sync-alt fa-spin"></i>Refreshing content protection settings...</p>');
+            metaboxContainer.html('<p class="ptc-notice-refreshing-metabox"><i class="fa fa-refresh fa-spin"></i>Refreshing settings...</p>');
 
             let data = {
               'action': 'ptc_trident_refresh_content_protection',

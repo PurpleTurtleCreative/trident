@@ -126,11 +126,11 @@ if ( isset( $the_post ) && is_a( $the_post, '\WP_Post' ) ) {
 
       <?php
     } else {
-      echo '<p class="ptc-trident-warning"><i class="fas fa-exclamation-triangle"></i>No WooCommerce products were found.</p>';
+      echo '<p class="ptc-trident-warning"><i class="fa fa-exclamation-triangle"></i>No WooCommerce products were found.</p>';
     }
 
   } else {
-    echo '<p class="ptc-trident-error"><i class="fas fa-lock"></i>WooCommerce was not detected. Protection by product ownership is currently unavailable.</p>';
+    echo '<p class="ptc-trident-error"><i class="fa fa-lock"></i>WooCommerce was not detected. Protection by product ownership is currently unavailable.</p>';
   }//end if woocommerce is loaded
 
   $user_state_suffixes = [ 'in', 'out', 'editor', 'any' ];

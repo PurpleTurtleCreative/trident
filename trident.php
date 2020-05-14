@@ -162,11 +162,11 @@ if ( ! class_exists( '\PTC_Trident' ) ) {
      */
     function register_scripts( $hook_suffix ) {
 
-      wp_register_script(
-        'fontawesome-5',
-        'https://kit.fontawesome.com/02ab9ff442.js',
+      wp_register_style(
+        'fontawesome',
+        'https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css',
         [],
-        '5.12.1'
+        '4.7.0'
       );
 
       switch ( $hook_suffix ) {
@@ -174,7 +174,7 @@ if ( ! class_exists( '\PTC_Trident' ) ) {
           wp_enqueue_script(
             'ptc-trident_metabox-content-protection-js',
             plugins_url( 'assets/js/metabox-content-protection.js', __FILE__ ),
-            [ 'jquery', 'fontawesome-5' ],
+            [ 'jquery' ],
             '0.0.0'
           );
           wp_localize_script(
@@ -187,7 +187,7 @@ if ( ! class_exists( '\PTC_Trident' ) ) {
           wp_enqueue_style(
             'ptc-trident_metabox-content-protection-css',
             plugins_url( 'assets/css/metabox-content-protection.css', __FILE__ ),
-            [],
+            [ 'fontawesome' ],
             '0.0.0'
           );
           break;

@@ -56,8 +56,7 @@
   color: #E67635;
 }
 
-#ptc-trident_content-protection div.inside p.ptc-trident-error i,
-#ptc-trident_content-protection div.inside p.ptc-trident-warning i {
+#ptc-trident_content-protection div.inside p > i {
   margin-right: 0.5em;
 }
 
@@ -105,4 +104,13 @@
 
 #ptc-trident_content-protection div.inside fieldset.ptc-trident-conditions-options div.ptc-trident-conditions-options-row-redirect p span {
   color: #E12D39;
+}
+
+#ptc-trident_content-protection div.inside p.ptc-notice-refreshing-metabox {
+  padding: 20px;
+  background: #F0F4F8;
+}
+
+#ptc-trident_content-protection div.inside p.ptc-notice-refreshing-metabox > i {
+  color: #0185ba;
 }
